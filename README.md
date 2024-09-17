@@ -5,7 +5,7 @@ FIREBASE INIT으로 설정합니다.
 - REALTIME DATABASE (✅)
  다른 것은 체크 X
 
-localhost에서 프로젝트 실행하기 : firebase serve
-오류가 발생하거나 모르겠나요?
-아래 디스코드 서버로 도움을 요청하세요!
+localhost에서 프로젝트 실행하기 : firebase serve <br>
+오류가 발생하거나 모르겠나요? <br>
+아래 디스코드 서버로 도움을 요청하세요! <br>
 https://discord.gg/KeAsKYZ473
