@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리 패널</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+        import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+    
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "변경하세요",
+            authDomain: "변경하세요",
+            projectId: "변경하세요",
+            storageBucket: "변경하세요",
+            messagingSenderId: "변경하세요",
+            appId: "변경하세요",
+            measurementId: "변경하세요"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const database = getDatabase(app);
+    
+        // 관리자 이메일 목록
+        const adminEmails = ['XXX@gmail.com', 'XXX@gmail.com'];
+    
+        // Discord Webhook URL
+        const webhookUrl = '로그인 로그를 전송할 디스코드 웹훅';
+    
+        // 로그인 
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                Swal.fire('로그인 실패', error.message, 'error');
+            }
+        });
+    
+        // 로그아웃 
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                document.getElementById('login-panel').style.display = 'block';
+                document.getElementById('manage-panel').style.display = 'none';
+                document.getElementById('help-page').style.display = 'none';
+            } catch (error) {
+                Swal.fire('로그아웃 실패', error.message, 'error');
+            }
+        });
+    
+        
+        onAuthStateChanged(auth, async user => {
+            if (user) {
+                document.getElementById('login-panel').style.display = 'none';
+                if (adminEmails.includes(user.email)) { // 관리자의 이메일을 확인
+                    document.getElementById('manage-panel').style.display = 'block';
+                    document.getElementById('help-page').style.display = 'none';
+                } else {
+                    document.getElementById('manage-panel').style.display = 'none';
+                    document.getElementById('help-page').style.display = 'block';
+                }
+    
+                
+                try {
+                    await axios.post(webhookUrl, {
+                        content: `${user.email}님이 로그인했습니다.`,
+                    });
+                } catch (error) {
+                    console.error('Webhook 전송 실패:', error);
+                }
+            } else {
+                document.getElementById('login-panel').style.display = 'block';
+                document.getElementById('manage-panel').style.display = 'none';
+                document.getElementById('help-page').style.display = 'none';
+            }
+        });
+    
+        
+        document.getElementById('send-command').addEventListener('click', async () => {
+            const command = document.getElementById('command').value;
+            const channelId = document.getElementById('channel-id').value;
+    
+            if (command && channelId) {
+                try {
+                    const newCommandRef = ref(database, 'bot-commands/' + Date.now());
+                    await set(newCommandRef, {
+                        command: command,
+                        channelId: channelId
+                    });
+                    Swal.fire('전송 완료', '명령어가 성공적으로 전송되었습니다.', 'success');
+                } catch (error) {
+                    Swal.fire('전송 실패', error.message, 'error');
+                }
+            } else {
+                Swal.fire('경고', '명령어와 채널 ID를 입력하세요.', 'warning');
+            }
+        });
+    
+        
+        document.getElementById('close-manage-panel').addEventListener('click', () => {
+            document.getElementById('manage-panel').style.display = 'none';
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .panel {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .panel h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .panel input, .panel button {
+            outline: none;
+            width: calc(100% - 20px);
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #a9a9a9;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .panel button {
+            border: none;
+            background-color: #343434;
+            color: rgb(255, 255, 255);
+           
+            cursor: pointer;
+        }
+        .panel button:hover {
+            background-color: #000000;
+        }
+        .hidden {
+            display: none;
+        }
+        #login-panel {
+            display: block;
+        }
+        #manage-panel {
+            display: none;
+        }
+        #help-page {
+            display: none;
+        }
+        #red {
+            color: #ff0d00;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-panel" class="panel">
+        <h2>Google로 관리패널 로그인</h2>
+        <button id="login-btn">로그인</button>
+    </div>
+    <div id="manage-panel" class="panel hidden">
+        <h2>[<span id="red">DISCORD BOT</span>] 관리 패널</h2>
+        <input type="text" id="command" placeholder="명령어 입력 (ping, help)">
+        <input type="text" id="channel-id" placeholder="채널 ID 입력">
+        <button id="send-command">명령어 전송</button>
+        <button id="close-manage-panel">닫기</button>
+
+        <div id="admin-functions" class="hidden">
+            <button id="logout-btn">로그아웃</button>
+        </div>
+    </div>
+    <div id="help-page" class="panel hidden">
+        <h2>로그인된 페이지</h2>
+        <button id="logout-btn">로그아웃</button>
+    </div>
+</body>
+</html>
