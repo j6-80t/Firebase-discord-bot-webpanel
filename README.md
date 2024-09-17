@@ -1,5 +1,5 @@
 # Firebase-discord-bot-webpanel
-FIREBASE 툴을 다운받은 후
+FIREBASE 툴을 다운받은 후 <br>
 FIREBASE INIT으로 설정합니다.
 - HOSTING (✅)
 - REALTIME DATABASE (✅)
